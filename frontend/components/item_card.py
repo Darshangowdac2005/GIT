@@ -9,7 +9,7 @@ class ItemCard(ft.Card):
         self.content = self._build_content()
     
     def _build_content(self):
-        status_color = ft.colors.GREEN_700 if self.item['status'] == 'found' else ft.colors.RED_700
+        status_color = ft.Colors.GREEN_700 if self.item['status'] == 'found' else ft.Colors.RED_700
         
         return ft.Container(
             padding=15,
@@ -18,7 +18,7 @@ class ItemCard(ft.Card):
                     ft.Row([
                         ft.Text(self.item['title'], weight=ft.FontWeight.BOLD, size=18),
                         ft.Container(
-                            content=ft.Text(self.item['status'].upper(), color=ft.colors.WHITE, size=12),
+                            content=ft.Text(self.item['status'].upper(), color=ft.Colors.WHITE, size=12),
                             bgcolor=status_color,
                             padding=ft.padding.only(left=8, right=8, top=2, bottom=2),
                             border_radius=5

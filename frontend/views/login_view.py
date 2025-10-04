@@ -48,7 +48,7 @@ class LoginView(ft.Container):
                                 ft.Row(
                                     [
                                         ft.ElevatedButton(text="Login", on_click=self._handle_login),
-                                        ft.TextButton(text="Sign Up Here", on_click=lambda e: print("Signup not yet implemented"))
+                                        ft.TextButton(text="Sign Up Here", on_click=lambda e: self.page.go("/signup"))
                                     ],
                                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                                 ),

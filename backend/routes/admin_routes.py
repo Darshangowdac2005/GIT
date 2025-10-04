@@ -1,6 +1,7 @@
 # backend/routes/admin_routes.py
 
 from flask import Blueprint, request, jsonify
+import mysql.connector
 from config.db_connector import db
 from utils.security import admin_required
 from utils.notification import send_claim_resolved_emails

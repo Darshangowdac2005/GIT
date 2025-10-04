@@ -1,8 +1,7 @@
-# backend/config/db_connector.py
-
 import mysql.connector
 import os
 from dotenv import load_dotenv
+from utils.security import hash_password
 
 load_dotenv()
 
@@ -110,6 +109,29 @@ def create_tables_and_seed():
         cursor.executemany("INSERT INTO Categories (name) VALUES (%s)", categories)
     except mysql.connector.Error:
         pass # Ignore if categories already exist
+
+    # Seed Sample User
+    try:
+        sample_user = ('Sample User', 'sample@example.com', hash_password('password'), 'student')
+        cursor.execute("INSERT INTO Users (name, email, password_hash, role) VALUES (%s, %s, %s, %s)", sample_user)
+        sample_user_id = cursor.lastrowid
+    except mysql.connector.Error:
+        # If user exists, get the id
+        cursor.execute("SELECT user_id FROM Users WHERE email = %s", ('sample@example.com',))
+        result = cursor.fetchone()
+        sample_user_id = result[0] if result else None
+
+    # Seed Sample Items
+    if sample_user_id:
+        try:
+            sample_items = [
+                (sample_user_id, 1, 'Lost iPhone', 'Black iPhone 12 lost in the library', 'lost'),
+                (sample_user_id, 2, 'Found Student ID', 'Student ID found near cafeteria', 'found'),
+                (sample_user_id, 3, 'Lost Jacket', 'Blue jacket lost during event', 'lost'),
+            ]
+            cursor.executemany("INSERT INTO Items (reported_by, category_id, title, description, status) VALUES (%s, %s, %s, %s, %s)", sample_items)
+        except mysql.connector.Error:
+            pass # Ignore if items already exist
 
     db.conn.commit()
     cursor.close()

@@ -1,8 +1,9 @@
 # backend/routes/item_routes.py
 
+import mysql.connector
 from flask import Blueprint, request, jsonify
 from config.db_connector import db
-from utils.security import token_required 
+from utils.security import token_required
 
 item_bp = Blueprint('item_bp', __name__)
 

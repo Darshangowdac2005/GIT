@@ -30,6 +30,17 @@ def login_user(email, password):
     except requests.exceptions.RequestException as e:
         return {"error": f"Network error: {e}"}
 
+def signup_user(name, email, password):
+    url = f"{API_BASE_URL}/auth/signup"
+    data = {"name": name, "email": email, "password": password}
+    try:
+        response = requests.post(url, json=data)
+        if response.status_code == 201:
+            return response.json()
+        return {"error": response.json().get('error', 'Signup failed.')}
+    except requests.exceptions.RequestException as e:
+        return {"error": f"Network error: {e}"}
+
 def get_items(status=None):
     url = f"{API_BASE_URL}/items"
     if status:

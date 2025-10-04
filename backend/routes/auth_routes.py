@@ -1,5 +1,6 @@
 # backend/routes/auth_routes.py
 import os
+import mysql.connector
 from flask import Blueprint, request, jsonify
 from config.db_connector import db
 from utils.security import hash_password, verify_password, encode_auth_token
@@ -10,7 +11,8 @@ auth_bp = Blueprint('auth_bp', __name__)
 def signup():
     data = request.json
     name, email, password, role = data.get('name'), data.get('email'), data.get('password'), data.get('role', 'student')
-    if not all([name, email, password]): return jsonify({"error": "Missing fields"}), 400
+    if not all([name, email, password]): 
+        return jsonify({"error": "Missing fields"}), 400
     
     password_hash = hash_password(password)
     cursor = db.conn.cursor()

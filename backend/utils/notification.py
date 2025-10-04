@@ -22,6 +22,12 @@ def get_user_email(user_id):
 def send_email(recipient_email, subject, body):
     """Handles SMTP connection and sends the email."""
     sender_email = os.getenv('EMAIL_SENDER')
+    
+    # Skip email sending if credentials not configured
+    if not all([sender_email, os.getenv('EMAIL_HOST'), os.getenv('EMAIL_USER'), os.getenv('EMAIL_PASS')]):
+        print(f"Email credentials not configured. Would have sent to {recipient_email}: {subject}")
+        return True  # Return True to continue flow
+    
     msg = MIMEMultipart()
     msg['From'] = sender_email
     msg['To'] = recipient_email
@@ -29,7 +35,7 @@ def send_email(recipient_email, subject, body):
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        server = smtplib.SMTP(os.getenv('EMAIL_HOST'), int(os.getenv('EMAIL_PORT')))
+        server = smtplib.SMTP(os.getenv('EMAIL_HOST'), int(os.getenv('EMAIL_PORT', 587)))
         server.starttls()  
         server.login(os.getenv('EMAIL_USER'), os.getenv('EMAIL_PASS'))
         server.sendmail(sender_email, recipient_email, msg.as_string())
@@ -39,11 +45,11 @@ def send_email(recipient_email, subject, body):
         print(f"ERROR sending email to {recipient_email}: {e}")
         return False
 
-def insert_notification(user_id, message, type):
+def insert_notification(user_id, message, notification_type):
     """Logs the notification in the database."""
     cursor = db.conn.cursor()
     query = "INSERT INTO Notifications (user_id, message, type, status) VALUES (%s, %s, %s, %s)"
-    cursor.execute(query, (user_id, message, type, Notification.STATUSES['SENT']))
+    cursor.execute(query, (user_id, message, notification_type, Notification.STATUSES['SENT']))
     db.conn.commit()
     cursor.close()
 
@@ -59,6 +65,8 @@ def send_claim_resolved_emails(item_id, claimant_id, admin_id):
 
     reporter = get_user_email(reporter_id)
     claimant = get_user_email(claimant_id)
+    
+    cursor.close()
     
     # Email to Original Reporter (Item Found/Returned)
     reporter_subject = f"SUCCESS: Your Item '{item_title}' Has Been RESOLVED!"

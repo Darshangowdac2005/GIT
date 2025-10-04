@@ -24,8 +24,8 @@ class HomeView(ft.Container):
         )
         
         self.content = self._build_ui()
-        # Initial load after the UI is built
-        ft.app.on_load = self._load_items(None)
+        # Initial load
+        self._load_items(None)
 
     def _load_items(self, e):
         self.items_list.controls.clear()

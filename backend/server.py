@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 
 from config.db_connector import create_tables_and_seed
-from routes.auth_routes import auth_bp 
+from routes.auth_routes import auth_bp
 from routes.item_routes import item_bp
 from routes.admin_routes import admin_bp
 
