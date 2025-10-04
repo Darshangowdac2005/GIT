@@ -1,0 +1,8 @@
+Flask
+Flask-CORS
+python-dotenv
+mysql-connector-python
+# Security and Utility (needed for full implementation)
+pyjwt
+bcrypt
+requests # For notification utility (e.g., mail API)
