@@ -109,63 +109,21 @@ def main(page: ft.Page):
 
     # --- Routing Logic ---
     def route_change(route):
-        page.views.clear()
-        
-        # Always add home as base view
-        page.views.append(
-            ft.View(
-                "/",
-                controls=[
-                    create_navbar(),
-                    HomeView(page)
-                ],
-                padding=0,
-                spacing=0
-            )
-        )
-        
-        # Login View
-        if page.route == "/login":
-            page.views.append(
-                ft.View(
-                    "/login",
-                    controls=[
-                        create_navbar(),
-                        LoginView(page, app_state)
-                    ],
-                    padding=0,
-                    spacing=0
-                )
-            )
+        page.controls.clear()
 
-        # Signup View
+        # Add navbar
+        page.controls.append(create_navbar())
+
+        # Add content based on route
+        if page.route == "/":
+            page.controls.append(HomeView(page))
+        elif page.route == "/login":
+            page.controls.append(LoginView(page, app_state))
         elif page.route == "/signup":
-            page.views.append(
-                ft.View(
-                    "/signup",
-                    controls=[
-                        create_navbar(),
-                        SignupView(page)
-                    ],
-                    padding=0,
-                    spacing=0
-                )
-            )
-        
-        # Report Item View (Protected)
+            page.controls.append(SignupView(page))
         elif page.route == "/report":
             if app_state["token"]:
-                page.views.append(
-                    ft.View(
-                        "/report",
-                        controls=[
-                            create_navbar(),
-                            ReportItemView(page)
-                        ],
-                        padding=0,
-                        spacing=0
-                    )
-                )
+                page.controls.append(ReportItemView(page))
             else:
                 # Redirect to login if not authenticated
                 page.snack_bar = ft.SnackBar(
@@ -174,21 +132,10 @@ def main(page: ft.Page):
                 )
                 page.snack_bar.open = True
                 page.go("/login")
-        
-        # Admin Dashboard View (Protected - Admin Only)
+                return  # Prevent further execution
         elif page.route == "/admin":
             if app_state["token"] and app_state["role"] == "admin":
-                page.views.append(
-                    ft.View(
-                        "/admin",
-                        controls=[
-                            create_navbar(),
-                            AdminDashboard(page)
-                        ],
-                        padding=0,
-                        spacing=0
-                    )
-                )
+                page.controls.append(AdminDashboard(page))
             elif app_state["token"]:
                 # Logged in but not admin
                 page.snack_bar = ft.SnackBar(
@@ -197,6 +144,7 @@ def main(page: ft.Page):
                 )
                 page.snack_bar.open = True
                 page.go("/")
+                return
             else:
                 # Not logged in
                 page.snack_bar = ft.SnackBar(
@@ -205,20 +153,12 @@ def main(page: ft.Page):
                 )
                 page.snack_bar.open = True
                 page.go("/login")
-        
-        page.update()
+                return
 
-    def view_pop(view):
-        page.views.pop()
-        if page.views:
-            top_view = page.views[-1]
-            page.go(top_view.route)
-        else:
-            page.go("/")
+        page.update()
 
     # Set up routing handlers
     page.on_route_change = route_change
-    page.on_view_pop = view_pop
     
     # Navigate to initial route
     page.go(page.route)
