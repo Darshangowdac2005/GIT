@@ -1,0 +1,1 @@
+- [x] Update README.md with proper project description, features, tech stack, installation, and usage.
