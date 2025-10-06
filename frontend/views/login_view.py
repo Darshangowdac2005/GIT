@@ -26,7 +26,7 @@ class LoginView(ft.Container):
         
         if result and 'token' in result:
             self.app_state["token"] = result['token']
-            self.app_state["role"] = result['role']
+            self.app_state["role"] = (result.get('role') or "").strip().lower()
             self.message_text.value = f"Success! Role: {result['role']}"
             
             # Navigate home and force a view refresh to update the navbar

@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, '..')
 
 import flet as ft
-from frontend.api_client import set_auth
+from frontend.api_client import set_auth, TOKEN as API_TOKEN, USER_ROLE as API_USER_ROLE
 from frontend.views.login_view import LoginView
 from frontend.views.signup_view import SignupView
 from frontend.views.home_view import HomeView
@@ -19,6 +19,9 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK 
     page.padding = 0
     page.spacing = 0
+    # App-wide pubsub for simple cross-view notifications (e.g., refresh items)
+    if not hasattr(page, "pubsub"):
+        page.pubsub = ft.PubSub()
     
     # --- Theme Mode Toggle ---
     def toggle_theme(e):
@@ -28,14 +31,21 @@ def main(page: ft.Page):
         
     # --- Navbar ---
     def create_navbar():
-        is_logged_in = app_state["token"] is not None
-        is_admin = app_state["role"] == "admin"
+        effective_token = app_state["token"] or API_TOKEN
+        effective_role = (app_state["role"] or API_USER_ROLE or "").lower()
+        is_logged_in = effective_token is not None
+        is_admin = effective_role == "admin"
         
         def logout(e):
             app_state["token"] = None
             app_state["role"] = None
             set_auth(None, None)  # Clear API client token
+            # Notify and force UI refresh
+            page.snack_bar = ft.SnackBar(content=ft.Text("Logged out"))
+            page.snack_bar.open = True
             page.go("/")
+            # Ensure navbar & route content re-render immediately
+            route_change(None)
 
         # Build actions list
         actions = [
@@ -126,31 +136,24 @@ def main(page: ft.Page):
                 page.controls.append(ReportItemView(page))
             else:
                 # Redirect to login if not authenticated
-                page.snack_bar = ft.SnackBar(
-                    content=ft.Text("Please login to report items"),
-                    bgcolor=ft.Colors.RED_400
-                )
+                page.snack_bar = ft.SnackBar(content=ft.Text("Please login to report items"), bgcolor=ft.Colors.RED_400)
                 page.snack_bar.open = True
                 page.go("/login")
                 return  # Prevent further execution
         elif page.route == "/admin":
-            if app_state["token"] and app_state["role"] == "admin":
+            effective_token = app_state["token"] or API_TOKEN
+            effective_role = (app_state["role"] or API_USER_ROLE or "").lower()
+            if effective_token and effective_role == "admin":
                 page.controls.append(AdminDashboard(page))
-            elif app_state["token"]:
+            elif effective_token:
                 # Logged in but not admin
-                page.snack_bar = ft.SnackBar(
-                    content=ft.Text("Admin access required"),
-                    bgcolor=ft.Colors.RED_400
-                )
+                page.snack_bar = ft.SnackBar(content=ft.Text("Admin access required"), bgcolor=ft.Colors.RED_400)
                 page.snack_bar.open = True
                 page.go("/")
                 return
             else:
                 # Not logged in
-                page.snack_bar = ft.SnackBar(
-                    content=ft.Text("Please login as admin"),
-                    bgcolor=ft.Colors.RED_400
-                )
+                page.snack_bar = ft.SnackBar(content=ft.Text("Please login as admin"), bgcolor=ft.Colors.RED_400)
                 page.snack_bar.open = True
                 page.go("/login")
                 return

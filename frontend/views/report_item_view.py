@@ -16,25 +16,33 @@ class ReportItemView(ft.Container):
         ]), value="lost")
         
         categories = get_categories()
-        self.category_options = [ft.dropdown.Option(str(c['category_id']), c['name']) for c in categories]
-        self.category_choice = ft.Dropdown(label="Category", width=400, options=self.category_options, value=self.category_options[0].key)
+        self.category_options = [ft.dropdown.Option(key=str(c['category_id']), text=c['name']) for c in categories]
+        default_category_key = self.category_options[0].key if self.category_options else None
+        self.category_choice = ft.Dropdown(label="Category", width=400, options=self.category_options, value=default_category_key, disabled=not bool(self.category_options))
         
         self.message_text = ft.Text("")
         
         self.content = self._build_ui()
 
     def _handle_report_submit(self, e):
-        report_data = {
-            "title": self.title_field.value,
-            "description": self.desc_field.value,
-            "status": self.status_choice.value,
-            "category_id": int(self.category_choice.value),
-        }
-        
         if not all([self.title_field.value, self.desc_field.value, self.status_choice.value, self.category_choice.value]):
             self.message_text.value = "Please fill out all fields."
             self.page.update()
             return
+        
+        try:
+            category_id = int(self.category_choice.value)
+        except (TypeError, ValueError):
+            self.message_text.value = "Please select a valid category."
+            self.page.update()
+            return
+
+        report_data = {
+            "title": self.title_field.value,
+            "description": self.desc_field.value,
+            "status": self.status_choice.value,
+            "category_id": category_id,
+        }
             
         self.message_text.value = "Submitting report..."
         self.page.update()

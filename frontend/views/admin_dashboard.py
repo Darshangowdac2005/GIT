@@ -15,10 +15,18 @@ class AdminDashboard(ft.Container):
             ft.DataColumn(ft.Text("Verification Details")),
             ft.DataColumn(ft.Text("Actions")),
         ], rows=[])
+        # Categories management controls
+        self.category_name_input = ft.TextField(label="New category name", width=300)
+        self.categories_table = ft.DataTable(columns=[
+            ft.DataColumn(ft.Text("ID")),
+            ft.DataColumn(ft.Text("Name")),
+            ft.DataColumn(ft.Text("Actions")),
+        ], rows=[])
         
         self.message_text = ft.Text("", color=ft.Colors.RED_500)
         self.content = self._build_ui()
         self._load_pending_claims()
+        self._load_categories()
 
     def _load_pending_claims(self, e=None):
         self.claims_data_table.rows.clear()
@@ -30,7 +38,7 @@ class AdminDashboard(ft.Container):
             if response.status_code == 200:
                 claims = response.json()
                 if not claims:
-                    self.message_text.value = "No pending claims to review."
+                    self.message_text.value = "No claims to review."
                 else:
                     self.message_text.value = ""
                 
@@ -50,8 +58,11 @@ class AdminDashboard(ft.Container):
             response = requests.post(url, json=data, headers=get_headers())
             
             if response.status_code == 200:
-                self.page.snack_bar = ft.SnackBar(ft.Text(f"Claim {resolution_type}d successfully!"), open=True)
-                self.page.update()
+                if self.page:
+                    self.page.snack_bar = ft.SnackBar(ft.Text(f"Claim {resolution_type}d successfully!"), open=True)
+                # Notify other views (e.g., HomeView) to refresh their data
+                if hasattr(self.page, "pubsub"):
+                    self.page.pubsub.send_all("refresh_items")
                 self._load_pending_claims()
             else:
                 self.message_text.value = f"Failed to resolve claim: {response.json().get('error', 'API error.')}"
@@ -80,11 +91,124 @@ class AdminDashboard(ft.Container):
     def _build_ui(self):
         return ft.Column(
             [
-                ft.Text("Admin Dashboard - Pending Claims", size=28, weight=ft.FontWeight.BOLD),
+                ft.Text("Admin Dashboard - Claims Management", size=28, weight=ft.FontWeight.BOLD),
                 self.message_text,
                 ft.Container(self.claims_data_table, expand=True, padding=10, border=ft.border.all(1, ft.Colors.BLACK12)),
-                ft.ElevatedButton("Refresh Claims", on_click=self._load_pending_claims)
+                ft.ElevatedButton("Refresh Claims", on_click=self._load_pending_claims),
+                ft.Divider(height=20),
+                ft.Text("Manage Categories", size=24, weight=ft.FontWeight.BOLD),
+                ft.Row([
+                    self.category_name_input,
+                    ft.ElevatedButton("Add Category", icon=ft.Icons.ADD, on_click=self._handle_create_category)
+                ]),
+                ft.Container(self.categories_table, expand=True, padding=10, border=ft.border.all(1, ft.Colors.BLACK12))
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             expand=True
         )
+
+    # -----------------------------
+    # Categories CRUD (UI logic)
+    # -----------------------------
+
+    def _load_categories(self, e: ft.ControlEvent | None = None):
+        self.categories_table.rows.clear()
+        try:
+            url = f"{API_BASE_URL}/admin/categories"
+            response = requests.get(url, headers=get_headers())
+            if response.status_code == 200:
+                categories = response.json() or []
+                for cat in categories:
+                    self.categories_table.rows.append(self._build_category_row(cat))
+            else:
+                self.page.snack_bar = ft.SnackBar(ft.Text("Failed to load categories"), bgcolor=ft.Colors.RED_400, open=True)
+        except requests.exceptions.RequestException as err:
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"Network error: {err}"), bgcolor=ft.Colors.RED_400, open=True)
+        self.page.update()
+
+    def _handle_create_category(self, e: ft.ControlEvent):
+        name = (self.category_name_input.value or "").strip()
+        if not name:
+            self.page.snack_bar = ft.SnackBar(ft.Text("Enter category name"), bgcolor=ft.Colors.RED_400, open=True)
+            return
+        try:
+            url = f"{API_BASE_URL}/admin/categories"
+            response = requests.post(url, json={"name": name}, headers=get_headers())
+            if response.status_code == 201:
+                self.category_name_input.value = ""
+                self.page.snack_bar = ft.SnackBar(ft.Text("Category created"), open=True)
+                self._load_categories()
+            else:
+                try:
+                    err_msg = response.json().get('error', 'Create failed')
+                except Exception:
+                    err_msg = f"Create failed (HTTP {response.status_code})"
+                self.page.snack_bar = ft.SnackBar(ft.Text(err_msg), bgcolor=ft.Colors.RED_400, open=True)
+        except requests.exceptions.RequestException as err:
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"Network error: {err}"), bgcolor=ft.Colors.RED_400, open=True)
+        self.page.update()
+
+    def _handle_delete_category(self, category_id: int):
+        try:
+            url = f"{API_BASE_URL}/admin/categories/{category_id}"
+            response = requests.delete(url, headers=get_headers())
+            if response.status_code == 200:
+                self.page.snack_bar = ft.SnackBar(ft.Text("Category deleted"), open=True)
+                self._load_categories()
+            else:
+                self.page.snack_bar = ft.SnackBar(ft.Text(response.json().get('error', 'Delete failed')), bgcolor=ft.Colors.RED_400, open=True)
+        except requests.exceptions.RequestException as err:
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"Network error: {err}"), bgcolor=ft.Colors.RED_400, open=True)
+        self.page.update()
+
+    def _open_edit_category_dialog(self, category_id: int, current_name: str):
+        name_field = ft.TextField(label="Category name", value=current_name, width=300)
+
+        def submit(e):
+            new_name = (name_field.value or "").strip()
+            if not new_name:
+                self.page.show_snack_bar(ft.SnackBar(ft.Text("Name required"), bgcolor=ft.Colors.RED_400))
+                return
+            try:
+                url = f"{API_BASE_URL}/admin/categories/{category_id}"
+                response = requests.put(url, json={"name": new_name}, headers=get_headers())
+                if response.status_code == 200:
+                    self.page.snack_bar = ft.SnackBar(ft.Text("Category updated"), open=True)
+                    self.page.dialog.open = False
+                    self._load_categories()
+                else:
+                    self.page.snack_bar = ft.SnackBar(ft.Text(response.json().get('error', 'Update failed')), bgcolor=ft.Colors.RED_400, open=True)
+            except requests.exceptions.RequestException as err:
+                self.page.snack_bar = ft.SnackBar(ft.Text(f"Network error: {err}"), bgcolor=ft.Colors.RED_400, open=True)
+            self.page.update()
+
+        def close(e):
+            self.page.dialog.open = False
+            self.page.update()
+
+        self.page.dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Edit Category"),
+            content=ft.Column([name_field], tight=True),
+            actions=[
+                ft.TextButton("Cancel", on_click=close),
+                ft.TextButton("Save", on_click=submit),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        self.page.dialog.open = True
+        self.page.update()
+
+    def _build_category_row(self, cat: dict) -> ft.DataRow:
+        cid = cat.get('category_id')
+        name = cat.get('name', '')
+        return ft.DataRow(cells=[
+            ft.DataCell(ft.Text(str(cid))),
+            ft.DataCell(ft.Text(name)),
+            ft.DataCell(
+                ft.Row([
+                    ft.IconButton(icon=ft.Icons.EDIT, tooltip="Edit", on_click=lambda e, _cid=cid, _name=name: self._open_edit_category_dialog(_cid, _name)),
+                    ft.IconButton(icon=ft.Icons.DELETE, tooltip="Delete", icon_color=ft.Colors.RED_400, on_click=lambda e, _cid=cid: self._handle_delete_category(_cid)),
+                ])
+            )
+        ])

@@ -4,3 +4,4 @@
 from .auth_routes import auth_bp
 from .item_routes import item_bp
 from .admin_routes import admin_bp
+from .category_routes import category_bp

@@ -27,30 +27,46 @@ class HomeView(ft.Container):
         # Initial load
         self._load_items(None)
 
+        # Subscribe to global pubsub to refresh when admin resolves claims or other updates occur
+        def _on_pubsub_message(msg):
+            if msg == "refresh_items":
+                self._load_items(None)
+        self.page.pubsub.subscribe(_on_pubsub_message)
+
     def _load_items(self, e):
         self.items_list.controls.clear()
-        
+
         status = self.status_filter.value if self.status_filter.value != 'all' else None
-        
+        search = self.search_field.value.strip() if self.search_field.value else None
+
         # Display loading spinner while fetching
         self.items_list.controls.append(ft.Container(ft.ProgressRing(), alignment=ft.alignment.center))
         self.page.update()
 
-        all_items = get_items(status=status)
+        all_items = get_items(status=status, search=search, include_resolved=True)
         self.items_list.controls.clear()
 
         if not all_items:
             self.items_list.controls.append(ft.Text("No items found. Report one!", size=16))
         else:
-            for item in all_items:
-                self.items_list.controls.append(ItemCard(item))
-                
+            # Separate resolved items for solved cases section
+            unresolved_items = [item for item in all_items if item.get('status') != 'resolved']
+            resolved_items = [item for item in all_items if item.get('status') == 'resolved']
+
+            for item in unresolved_items:
+                self.items_list.controls.append(ItemCard(item, self.page))
+
+            if resolved_items:
+                self.items_list.controls.append(ft.Divider(height=20))
+                self.items_list.controls.append(ft.Text("Solved Cases", size=20))
+                for item in resolved_items:
+                    self.items_list.controls.append(ItemCard(item, self.page))
+
         self.page.update()
 
     def _build_ui(self):
         return ft.Column(
             [
-                ft.Text("Lost & Found Listings", size=28, weight=ft.FontWeight.BOLD),
                 ft.Row(
                     [
                         self.search_field,

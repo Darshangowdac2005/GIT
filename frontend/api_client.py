@@ -9,7 +9,7 @@ USER_ROLE = None
 def set_auth(token, role):
     global TOKEN, USER_ROLE
     TOKEN = token
-    USER_ROLE = role
+    USER_ROLE = (role or "").strip().lower()
 
 def get_headers():
     headers = {"Content-Type": "application/json"}
@@ -41,10 +41,17 @@ def signup_user(name, email, password):
     except requests.exceptions.RequestException as e:
         return {"error": f"Network error: {e}"}
 
-def get_items(status=None):
+def get_items(status=None, search=None, include_resolved=False):
     url = f"{API_BASE_URL}/items"
+    params = []
     if status:
-        url += f"?status={status}"
+        params.append(f"status={status}")
+    if search:
+        params.append(f"search={search}")
+    if include_resolved:
+        params.append("include_resolved=true")
+    if params:
+        url += "?" + "&".join(params)
     try:
         response = requests.get(url, headers=get_headers())
         if response.status_code == 200:
@@ -53,9 +60,27 @@ def get_items(status=None):
     except requests.exceptions.RequestException:
         return []
 
+def claim_item_api(item_id, verification_details):
+    url = f"{API_BASE_URL}/items/{item_id}/claim"
+    data = {"verification_details": verification_details}
+    try:
+        response = requests.post(url, json=data, headers=get_headers())
+        if response.status_code == 201:
+            return response.json()
+        return {"error": response.json().get('error', 'Claim failed.')}
+    except requests.exceptions.RequestException as e:
+        return {"error": f"Network error: {e}"}
+
 def get_categories():
-    # Since we didn't create a separate categories route, mock the seeded data
-    return [{'category_id': 1, 'name': 'Electronics'}, {'category_id': 2, 'name': 'ID/Documents'}, {'category_id': 3, 'name': 'Apparel/Clothing'}]
+    # Attempt to fetch categories from backend; return an empty list if unavailable
+    url = f"{API_BASE_URL}/categories"
+    try:
+        response = requests.get(url, headers=get_headers())
+        if response.status_code == 200:
+            return response.json()
+        return []
+    except requests.exceptions.RequestException:
+        return []
 
 def report_item_api(report_data):
     url = f"{API_BASE_URL}/items"

@@ -6,7 +6,7 @@ import jwt
 import bcrypt
 
 # --- Secret Key ---
-SECRET_KEY = os.getenv('JWT_SECRET', 'test_secret')
+SECRET_KEY = os.getenv('SECRET_KEY', 'default-secret-key')
 
 def hash_password(password):
     """Hash a password using bcrypt."""
