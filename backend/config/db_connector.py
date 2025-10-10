@@ -46,8 +46,7 @@ def create_tables_and_seed():
             user_id INT PRIMARY KEY AUTO_INCREMENT,
             name VARCHAR(100) NOT NULL,
             email VARCHAR(100) UNIQUE NOT NULL,
-            role ENUM('student', 'faculty', 'admin') NOT NULL DEFAULT 'student', 
-            phone_number VARCHAR(15),
+            role ENUM('student', 'faculty', 'admin') NOT NULL DEFAULT 'student',
             password_hash VARCHAR(255) NOT NULL
         )
     """)
@@ -69,7 +68,6 @@ def create_tables_and_seed():
             title VARCHAR(100) NOT NULL,
             description TEXT,
             status ENUM('lost', 'found', 'claim_pending', 'resolved') NOT NULL,
-            image_url VARCHAR(255),
             date_reported DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (reported_by) REFERENCES Users(user_id),
             FOREIGN KEY (category_id) REFERENCES Categories(category_id)

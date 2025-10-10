@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS Users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     role ENUM('student', 'faculty', 'admin') NOT NULL DEFAULT 'student',
-    phone_number VARCHAR(15),
     password_hash VARCHAR(255) NOT NULL
 );
 
@@ -26,7 +25,6 @@ CREATE TABLE IF NOT EXISTS Items (
     title VARCHAR(100) NOT NULL,
     description TEXT,
     status ENUM('lost', 'found', 'claim_pending', 'resolved') NOT NULL,
-    image_url VARCHAR(255),
     date_reported DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (reported_by) REFERENCES Users(user_id),
     FOREIGN KEY (category_id) REFERENCES Categories(category_id)

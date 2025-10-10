@@ -41,7 +41,8 @@ class HomeView(ft.Container):
 
         # Display loading spinner while fetching
         self.items_list.controls.append(ft.Container(ft.ProgressRing(), alignment=ft.alignment.center))
-        self.page.update()
+        if self.page:
+            self.page.update()
 
         all_items = get_items(status=status, search=search, include_resolved=True)
         self.items_list.controls.clear()
@@ -62,7 +63,8 @@ class HomeView(ft.Container):
                 for item in resolved_items:
                     self.items_list.controls.append(ItemCard(item, self.page))
 
-        self.page.update()
+        if self.page:
+            self.page.update()
 
     def _build_ui(self):
         return ft.Column(
