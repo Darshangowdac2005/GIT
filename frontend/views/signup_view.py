@@ -12,6 +12,16 @@ class SignupView(ft.Container):
         self.email_field = ft.TextField(label="Email", width=300)
         self.password_field = ft.TextField(label="Password", password=True, width=300)
         self.confirm_password_field = ft.TextField(label="Confirm Password", password=True, width=300)
+        self.role_choice = ft.Dropdown(
+            label="Role",
+            width=300,
+            options=[
+                ft.dropdown.Option("student", "Student"),
+                ft.dropdown.Option("faculty", "Faculty"),
+                ft.dropdown.Option("admin", "Admin")
+            ],
+            value="student"
+        )
         self.message_text = ft.Text("")
 
         self.content = self._build_ui()
@@ -35,7 +45,8 @@ class SignupView(ft.Container):
         self.message_text.value = "Signing up..."
         self.page.update()
         
-        result = signup_user(name, email, password)
+        role = self.role_choice.value
+        result = signup_user(name, email, password, role)
         
         if result and 'message' in result:
             self.message_text.value = "Signup successful! Please login."
@@ -61,6 +72,7 @@ class SignupView(ft.Container):
                                 self.email_field,
                                 self.password_field,
                                 self.confirm_password_field,
+                                self.role_choice,
                                 ft.ElevatedButton(text="Sign Up", on_click=self._handle_signup),
                                 self.message_text
                             ],

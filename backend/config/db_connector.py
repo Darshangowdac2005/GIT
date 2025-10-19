@@ -101,6 +101,13 @@ def create_tables_and_seed():
         )
     """)
     
+    # Seed categories if empty
+    cursor.execute("SELECT COUNT(*) FROM Categories")
+    if cursor.fetchone()[0] == 0:
+        categories = ['Electronics', 'Clothing', 'Books', 'Accessories', 'Other']
+        for cat in categories:
+            cursor.execute("INSERT INTO Categories (name) VALUES (%s)", (cat,))
+
     # Only ensure tables exist; do not insert any sample data
     db.conn.commit()
     cursor.close()

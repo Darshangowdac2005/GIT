@@ -30,9 +30,9 @@ def login_user(email, password):
     except requests.exceptions.RequestException as e:
         return {"error": f"Network error: {e}"}
 
-def signup_user(name, email, password):
+def signup_user(name, email, password, role="student"):
     url = f"{API_BASE_URL}/auth/signup"
-    data = {"name": name, "email": email, "password": password}
+    data = {"name": name, "email": email, "password": password, "role": role}
     try:
         response = requests.post(url, json=data)
         if response.status_code == 201:

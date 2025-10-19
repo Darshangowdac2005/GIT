@@ -17,19 +17,16 @@ def report_item():
     status = data.get('status') 
     category_id = data.get('category_id') 
     
-    # Placeholder for image_url logic
-    image_url = 'N/A' 
-
     if not all([user_id, title, status, category_id]):
         return jsonify({"error": "Missing essential item details."}), 400
 
     cursor = db.conn.cursor()
     try:
         query = """
-            INSERT INTO Items (reported_by, category_id, title, description, status, image_url) 
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO Items (reported_by, category_id, title, description, status)
+            VALUES (%s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (user_id, category_id, title, description, status, image_url))
+        cursor.execute(query, (user_id, category_id, title, description, status))
         db.conn.commit()
         return jsonify({"message": "Item reported successfully!", "id": cursor.lastrowid}), 201
     except mysql.connector.Error as err:
