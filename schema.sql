@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS Items (
     category_id INT NOT NULL,
     title VARCHAR(100) NOT NULL,
     description TEXT,
-    status ENUM('lost', 'found', 'claim_pending', 'resolved') NOT NULL,
+    status ENUM('lost', 'found') NOT NULL,
     date_reported DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (reported_by) REFERENCES Users(user_id),
     FOREIGN KEY (category_id) REFERENCES Categories(category_id)
