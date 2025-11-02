@@ -10,17 +10,17 @@ item_bp = Blueprint('item_bp', __name__)
 @item_bp.route('', methods=['POST'])
 @token_required
 def report_item():
-    user_id = request.user_id 
+    user_id = request.user_id
     data = request.json
     title = data.get('title')
     description = data.get('description')
-    status = data.get('status') 
-    category_id = data.get('category_id') 
-    
+    status = data.get('status')
+    category_id = data.get('category_id')
+
     if not all([user_id, title, status, category_id]):
         return jsonify({"error": "Missing essential item details."}), 400
 
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     try:
         query = """
             INSERT INTO Items (reported_by, category_id, title, description, status)
@@ -44,7 +44,7 @@ def claim_item(item_id):
     if not verification_details:
         return jsonify({"error": "Verification details are required."}), 400
 
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     try:
         # Check if item exists and is claimable
         cursor.execute("SELECT status FROM Items WHERE item_id = %s", (item_id,))
@@ -56,7 +56,7 @@ def claim_item(item_id):
 
         # Check if there is already a pending claim for this item by this user
         cursor.execute("""
-            SELECT claim_id FROM Claims 
+            SELECT claim_id FROM Claims
             WHERE item_id = %s AND claimant_id = %s AND claim_status = %s
         """, (item_id, user_id, 'pending'))
         existing_claim = cursor.fetchone()
@@ -89,7 +89,7 @@ def get_all_items():
     search_query = request.args.get('search', '').strip()
     include_resolved = request.args.get('include_resolved', 'false').lower() == 'true'
 
-    cursor = db.conn.cursor(dictionary=True)
+    cursor = db.get_cursor(dictionary=True)
 
     # Include resolved items if requested
     allowed_statuses = ['lost', 'found']

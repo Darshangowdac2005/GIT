@@ -27,6 +27,14 @@ class Database:
             print(f"❌ Error connecting to MySQL: {err}")
             exit(1)
 
+    def get_cursor(self, dictionary=False):
+        try:
+            self.conn.ping(reconnect=True)
+        except mysql.connector.Error:
+            print("Connection lost, reconnecting...")
+            self.connect()
+        return self.conn.cursor(dictionary=dictionary)
+
     def close(self):
         if self.cursor:
             self.cursor.close()
@@ -37,7 +45,7 @@ db = Database()
 db.connect()
 
 def create_tables_and_seed():
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     item_ids = []
     
     # --- 1. Users Table ---

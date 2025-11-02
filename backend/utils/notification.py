@@ -13,7 +13,7 @@ load_dotenv()
 
 def get_user_email(user_id):
     """Fetches user email and name from the database."""
-    cursor = db.conn.cursor(dictionary=True)
+    cursor = db.get_cursor(dictionary=True)
     cursor.execute("SELECT email, name FROM Users WHERE user_id = %s", (user_id,))
     user = cursor.fetchone()
     cursor.close()
@@ -47,7 +47,7 @@ def send_email(recipient_email, subject, body):
 
 def insert_notification(user_id, message, notification_type):
     """Logs the notification in the database."""
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     query = "INSERT INTO Notifications (user_id, message, type, status) VALUES (%s, %s, %s, %s)"
     cursor.execute(query, (user_id, message, notification_type, Notification.STATUSES['SENT']))
     db.conn.commit()
@@ -55,8 +55,8 @@ def insert_notification(user_id, message, notification_type):
 
 def send_claim_resolved_emails(item_id, claimant_id, admin_id):
     """Sends resolution emails to both the reporter and the claimant."""
-    cursor = db.conn.cursor(dictionary=True)
-    
+    cursor = db.get_cursor(dictionary=True)
+
     # 1. Get Item Reporter (Original Lost/Found User)
     cursor.execute("SELECT reported_by, title FROM Items WHERE item_id = %s", (item_id,))
     item_info = cursor.fetchone()
@@ -65,7 +65,7 @@ def send_claim_resolved_emails(item_id, claimant_id, admin_id):
 
     reporter = get_user_email(reporter_id)
     claimant = get_user_email(claimant_id)
-    
+
     cursor.close()
     
     # Email to Original Reporter (Item Found/Returned)

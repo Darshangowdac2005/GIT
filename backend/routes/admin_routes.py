@@ -14,7 +14,7 @@ admin_bp = Blueprint('admin_bp', __name__)
 @admin_required
 def get_pending_claims():
     """Admin dashboard view: lists all pending claims."""
-    cursor = db.conn.cursor(dictionary=True)
+    cursor = db.get_cursor(dictionary=True)
     
     # Complex query to fetch claim details along with item titles and user emails
     query = """
@@ -39,11 +39,11 @@ def resolve_claim():
     data = request.json
     claim_id = data.get('claim_id')
     resolution_type = data.get('resolution_type') # 'approve' or 'reject'
-    
+
     if not claim_id or resolution_type not in ['approve', 'reject']:
         return jsonify({"error": "Missing claim ID or invalid resolution type."}), 400
 
-    cursor = db.conn.cursor(dictionary=True)
+    cursor = db.get_cursor(dictionary=True)
     
     try:
         if resolution_type == 'approve':
@@ -86,7 +86,7 @@ def resolve_claim():
 @admin_bp.route('/categories', methods=['GET'])
 @admin_required
 def admin_list_categories():
-    cursor = db.conn.cursor(dictionary=True)
+    cursor = db.get_cursor(dictionary=True)
     cursor.execute("SELECT category_id, name FROM Categories ORDER BY name ASC")
     rows = cursor.fetchall()
     cursor.close()
@@ -100,7 +100,7 @@ def admin_create_category():
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'error': 'Category name is required.'}), 400
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     try:
         cursor.execute("INSERT INTO Categories (name) VALUES (%s)", (name,))
         db.conn.commit()
@@ -119,7 +119,7 @@ def admin_update_category(category_id: int):
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'error': 'Category name is required.'}), 400
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     try:
         cursor.execute("UPDATE Categories SET name = %s WHERE category_id = %s", (name, category_id))
         if cursor.rowcount == 0:
@@ -137,7 +137,7 @@ def admin_update_category(category_id: int):
 @admin_bp.route('/categories/<int:category_id>', methods=['DELETE'])
 @admin_required
 def admin_delete_category(category_id: int):
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     try:
         cursor.execute("DELETE FROM Categories WHERE category_id = %s", (category_id,))
         if cursor.rowcount == 0:

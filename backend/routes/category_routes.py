@@ -8,7 +8,7 @@ category_bp = Blueprint('category_bp', __name__)
 
 @category_bp.route('', methods=['GET'])
 def list_categories():
-    cursor = db.conn.cursor(dictionary=True)
+    cursor = db.get_cursor(dictionary=True)
     cursor.execute("SELECT category_id, name FROM Categories ORDER BY name ASC")
     categories = cursor.fetchall()
     cursor.close()
@@ -21,7 +21,7 @@ def create_category():
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'error': 'Category name is required.'}), 400
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     try:
         cursor.execute("INSERT INTO Categories (name) VALUES (%s)", (name,))
         db.conn.commit()
